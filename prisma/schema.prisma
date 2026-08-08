@@ -25,7 +25,6 @@ model store {
   profile_image  String?
   adress       String?
   cover_image    String?
-  category       String
   origin_country String
 
   owner_id Int @unique
