@@ -72,6 +72,7 @@ export class UsersService {
             name:true,
             profile_image:true,
             origin_country:true,
+            adress:true,
           }
         }
       }

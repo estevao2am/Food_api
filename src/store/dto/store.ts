@@ -13,6 +13,9 @@ export class CreateStoreDto {
   @IsString()
   profile_image?: string;
 
+    @IsOptional()
+  @IsString()
+   adress?: string;
   @IsOptional()
   @IsString()
   cover_image?: string;

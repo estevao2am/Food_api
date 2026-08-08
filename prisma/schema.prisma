@@ -23,6 +23,7 @@ model store {
   id             Int     @id @default(autoincrement())
   name           String
   profile_image  String?
+  adress       String?
   cover_image    String?
   category       String
   origin_country String
