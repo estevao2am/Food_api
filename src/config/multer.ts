@@ -1,3 +1,4 @@
+import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
 import multer from 'multer';
 
 const allowedMimes = [
@@ -6,18 +7,14 @@ const allowedMimes = [
   'image/png',
 ];
 
-export const multerConfig: multer.Options = {
+export const multerConfig: MulterOptions = {
   storage: multer.memoryStorage(),
 
   limits: {
-    fileSize: 4 * 1024 * 1024, // 4 MB
+    fileSize: 4 * 1024 * 1024,
   },
 
-  fileFilter: (
-    _req,
-    file,
-    cb,
-  ) => {
+  fileFilter: (_req, file, cb) => {
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -25,6 +22,7 @@ export const multerConfig: multer.Options = {
         new Error(
           'Formato de arquivo inválido. Use apenas JPG, JPEG ou PNG.',
         ),
+        false,
       );
     }
   },

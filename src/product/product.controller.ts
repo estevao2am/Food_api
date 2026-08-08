@@ -7,12 +7,16 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto, UpdateProductDto } from './dto/product';
 import { CurrentUser } from '../users/decorator/current-user.decorator';
 import { AuthGuard } from '../users/auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { multerConfig } from '../config/multer';
 
 @Controller('product')
 export class ProductController {
@@ -20,16 +24,20 @@ export class ProductController {
 
 @UseGuards(AuthGuard)
 @Post()
+@UseInterceptors(
+  FileInterceptor('image', multerConfig),
+)
 async createProduct(
   @Body() data: CreateProductDto,
+  @UploadedFile() file: Express.Multer.File,
   @CurrentUser() user: { sub: number },
 ) {
   return this.productService.createProduct(
     data,
     user.sub,
+    file,
   );
 }
-
   @Get()
   async findAllProducts() {
     return await this.productService.findAllProducts();
