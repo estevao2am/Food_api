@@ -1,0 +1,15 @@
+services:
+  postgres:
+    container_name: mister_pizza
+    image: bitnami/postgresql:latest
+    environment:
+      POSTGRES_USER: docker
+      POSTGRES_PASSWORD: docker
+      POSTGRES_DB: mister_pizza_db
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/bitnami/postgressql/
+
+volumes:
+  postgres_data:
