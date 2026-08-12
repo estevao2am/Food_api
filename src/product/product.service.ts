@@ -120,9 +120,36 @@ export class ProductService {
 
 
   
-  async findAllProducts() {
-    return await this.prismaService.product.findMany();
-  }
+ async findAllProducts(page = 1) {
+  const limit = 10;
+
+  const skip = (page - 1) * limit;
+
+  const [products, total] = await Promise.all([
+    this.prismaService.product.findMany({
+      skip,
+      take: limit,
+      orderBy: {
+        created_at: 'desc',
+      },
+    }),
+
+    this.prismaService.product.count(),
+  ]);
+
+  return {
+    data: products,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: page < Math.ceil(total / limit),
+      hasPreviousPage: page > 1,
+    },
+  };
+}
+
 
   async findProductById(id: number) {
     const product = await this.prismaService.product.findUnique({
@@ -151,5 +178,43 @@ export class ProductService {
     return await this.prismaService.product.delete({
       where: { id },
     });
+  }
+
+  async findProductsByStoreId(storeId: number, page = 1) {
+    const store = await this.prismaService.store.findUnique({
+      where: { id: storeId },
+    });
+
+    if (!store) {
+      throw new NotFoundException('Store not found');
+    }
+
+    const limit = 10;
+    const skip = (page - 1) * limit;
+
+    const [products, total] = await Promise.all([
+      this.prismaService.product.findMany({
+        where: { store_id: storeId },
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: 'desc',
+        },
+      }),
+
+      this.prismaService.product.count({ where: { store_id: storeId } }),
+    ]);
+
+    return {
+      data: products,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPreviousPage: page > 1,
+      },
+    };
   }
 }

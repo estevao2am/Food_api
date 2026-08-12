@@ -49,6 +49,7 @@ export class StoresController {
   /**
    * Buscar uma loja pelo ID
    */
+  @UseGuards(AuthGuard)
   @Get(':id')
   async findById(
     @Param('id', ParseIntPipe) id: number,

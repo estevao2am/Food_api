@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -38,10 +39,14 @@ async createProduct(
     file,
   );
 }
-  @Get()
-  async findAllProducts() {
-    return await this.productService.findAllProducts();
-  }
+@Get()
+async findAllProducts(
+  @Query('page') page = '1',
+) {
+  return this.productService.findAllProducts(
+    Number(page),
+  );
+}
 
   @Get(':id')
   async findProductById(@Param('id', ParseIntPipe) id: number) {
@@ -59,5 +64,16 @@ async createProduct(
   @Delete(':id')
   async deleteProduct(@Param('id', ParseIntPipe) id: number) {
     return await this.productService.deleteProduct(id);
+  }
+
+  @Get('store/:storeId')
+  async findProductsByStoreId(
+    @Param('storeId', ParseIntPipe) storeId: number,
+    @Query('page') page = '1',
+  ) {
+    return await this.productService.findProductsByStoreId(
+      storeId,
+      Number(page),
+    );
   }
 }
