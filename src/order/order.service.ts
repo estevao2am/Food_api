@@ -198,7 +198,98 @@ async addItem(userId: number, productId: number, quantity: number) {
       },
     });
   }
-}
+
+  async getAllOrders(page = 1) {
+    const limit = 10;
+    const skip = (page - 1) * limit;
+
+    const [orders, total] = await Promise.all([
+      this.prismaService.order.findMany({
+        skip,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+        include: {
+          user: true,
+          order_stores: {
+            include: {
+              store: true,
+              items: {
+                include: { product: true },
+              },
+            },
+          },
+        },
+      }),
+
+      this.prismaService.order.count(),
+    ]);
+
+    // Recalculate subtotals and totals from items to ensure consistency
+    const normalized = orders.map((o) => {
+      const order = JSON.parse(JSON.stringify(o));
+
+      let orderTotal = 0;
+
+      if (order.order_stores && Array.isArray(order.order_stores)) {
+        order.order_stores = order.order_stores.map((os: any) => {
+          let subtotal = 0;
+
+          if (os.items && Array.isArray(os.items)) {
+            subtotal = os.items.reduce(
+              (sum: number, it: any) => sum + it.unit_price * it.quantity,
+              0,
+            );
+          }
+
+          orderTotal += subtotal;
+
+          return {
+            ...os,
+            subtotal,
+          };
+        });
+      }
+
+      order.total = orderTotal;
+
+      return order;
+    });
+
+    return {
+      data: normalized,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPreviousPage: page > 1,
+      },
+    };
+  }
+async findOrderById(id: number) {
+    const order = await this.prismaService.order.findUnique({
+      where: { id },  
+    include: {
+      user: true,
+      order_stores: {
+        include: {
+          store: true,
+          items: {
+            include: { product: true },
+          },
+        },
+      },
+    },
+  });        
+
+ 
+    if (!order) {
+      throw new NotFoundException('Pedido não encontrado');
+      }
+      return order;
+    }}
+
 
 
 // TODO: Implementar a função de remover item do carrinho

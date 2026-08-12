@@ -4,6 +4,9 @@ import {
   Get,
   Post,
   UseGuards,
+  Param,
+  ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 
 import { OrderService } from './order.service';
@@ -23,6 +26,11 @@ export class OrderController {
     @CurrentUser() user: { sub: number },
   ) {
     return this.orderService.createOrder(user.sub);
+  }
+
+  @Get()
+  async getAllOrders(@Query('page') page = '1') {
+    return this.orderService.getAllOrders(Number(page));
   }
 
 @UseGuards(AuthGuard)
@@ -49,4 +57,8 @@ export class OrderController {
       data.quantity,
     );
   }
+
+  @Get(':id')
+  async getOrderById(@Param('id', ParseIntPipe) id: number) {
+    return this.orderService.findOrderById(id);}
 }
