@@ -5,61 +5,210 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+// ==============================
+// USER
+// ==============================
 
-model user {
-  id         Int      @id @default(autoincrement())
+model User {
+  id Int @id @default(autoincrement())
+
   first_name String
-  last_name  String
-  avatar_url String?
-  email      String   @unique
+  last_name  String?
+  email      String @unique
   password   String
+  avatar_url String?
+
+  store  Store?
+  orders Order[]
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  store store?
+  @@map("users")
 }
 
-model store {
-  id             Int     @id @default(autoincrement())
-  name           String
-  profile_image  String?
+
+// ==============================
+// STORE
+// ==============================
+
+model Store {
+  id Int @id @default(autoincrement())
+
+  name String
+
+  profile_image String?
+  cover_image   String?
   adress       String?
-  cover_image    String?
-  origin_country String
+  category       String?
+  origin_country String?
 
   owner_id Int @unique
 
+  owner User @relation(fields: [owner_id],references: [id],onDelete: Cascade )
+
+  products Product[]
+
+// Os pedidos desta loja, que podem estar em diferentes status (carrinho, pendente, pago, etc.)
+  order_stores OrderStore[]
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  owner    user      @relation(fields: [owner_id], references: [id])
-  products product[]
+  @@map("stores")
 }
 
-model product {
-  id          Int     @id @default(autoincrement())
+
+// ==============================
+// CATEGORY
+// ==============================
+
+model Category {
+  id Int @id @default(autoincrement())
+
+  name String @unique
+
+  products Product[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("categories")
+}
+
+
+// ==============================
+// PRODUCT
+// ==============================
+
+model Product {
+  id Int @id @default(autoincrement())
+
   name        String
   description String
-  price       Float
+  price       Int
   image_url   String?
 
-  store_id    Int
+  store_id Int
+    stock Int @default(0)
+
+  store Store @relation(fields: [store_id],references: [id],onDelete: Cascade )
+
   category_id Int
 
+  category Category @relation( fields: [category_id],references: [id] )
+
+// Os itens de pedido que incluem este produto
+  order_items OrderItem[]
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  store    store    @relation(fields: [store_id], references: [id])
-  category category @relation(fields: [category_id], references: [id])
+  @@index([store_id])
+  @@index([category_id])
+
+  @@map("products")
 }
 
-model category {
-  id          Int     @id @default(autoincrement())
-  name        String
-  description String?
+
+// ==============================
+// ORDER
+// ==============================
+// Um pedido é feito por um usuário e pode incluir produtos de diferentes lojas. Cada loja terá seu próprio subtotal e status de pedido.
+model Order {
+  id Int @id @default(autoincrement())
+
+  user_id Int
+
+  user User @relation(fields: [user_id],references: [id])
+
+// O valor total do pedido, que é a soma dos subtotais de cada loja envolvida
+  total Int @default(0)
+
+  status OrderStatus @default(CART)
+
+// As lojas envolvidas neste pedido, cada uma com seu próprio subtotal e status
+  order_stores OrderStore[]
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  products product[]
+  @@index([user_id])
+  @@index([status])
+
+  @@map("orders")
+}
+
+
+// ==============================
+// ORDER STORE
+// ==============================
+
+model OrderStore {
+  id Int @id @default(autoincrement())
+
+  order_id Int
+
+  order Order @relation(fields: [order_id],references: [id],onDelete: Cascade )
+
+  store_id Int
+
+  store Store @relation(fields: [store_id],references: [id] )
+
+  subtotal Int @default(0)
+
+  items OrderItem[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([order_id, store_id])
+  @@index([store_id])
+
+  @@map("order_stores")
+}
+
+
+// ==============================
+// ORDER ITEM
+// ==============================
+
+model OrderItem {
+  id Int @id @default(autoincrement())
+
+// A loja que está vendendo este produto neste pedido
+  order_store_id Int
+
+  order_store OrderStore @relation( fields: [order_store_id], references: [id], onDelete: Cascade)
+
+  product_id Int
+
+  product Product @relation( fields: [product_id],references: [id])
+
+  quantity Int
+
+  unit_price Int
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([order_store_id, product_id])
+  @@index([product_id])
+
+  @@map("order_items")
+}
+
+
+// ==============================
+// ENUM
+// ==============================
+
+enum OrderStatus {
+  CART
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
 }
